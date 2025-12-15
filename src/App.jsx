@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Plus, Edit2, Trash2, Save, X, Users, Briefcase, Mail, Phone, DollarSign } from 'lucide-react';
 
-export default function EmployeeMIS() {
+export default function App() {
   const [employees, setEmployees] = useState([]);
   const [filteredEmployees, setFilteredEmployees] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -35,12 +35,11 @@ export default function EmployeeMIS() {
     let filtered = employees;
     
     if (searchTerm) {
-      const q = searchTerm.toLowerCase();
       filtered = filtered.filter(emp =>
-        (emp.name || '').toLowerCase().includes(q) ||
-        (emp.email || '').toLowerCase().includes(q) ||
-        (emp.department || '').toLowerCase().includes(q) ||
-        (emp.position || '').toLowerCase().includes(q)
+        emp.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        emp.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        emp.department.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        emp.position.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
     
@@ -51,7 +50,7 @@ export default function EmployeeMIS() {
     setFilteredEmployees(filtered);
   }, [searchTerm, filterDept, employees]);
 
-  const departments = ['All', ...Array.from(new Set(employees.map(emp => emp.department)))];
+  const departments = ['All', ...new Set(employees.map(emp => emp.department))];
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -68,7 +67,7 @@ export default function EmployeeMIS() {
     } else {
       const newEmployee = {
         ...formData,
-        id: employees.length > 0 ? Math.max(...employees.map(e => e.id)) + 1 : 1,
+        id: Math.max(...employees.map(e => e.id), 0) + 1,
         salary: parseFloat(formData.salary)
       };
       setEmployees(prev => [...prev, newEmployee]);
@@ -84,7 +83,7 @@ export default function EmployeeMIS() {
       phone: emp.phone,
       department: emp.department,
       position: emp.position,
-      salary: String(emp.salary),
+      salary: emp.salary.toString(),
       joinDate: emp.joinDate,
       status: emp.status
     });
@@ -93,7 +92,7 @@ export default function EmployeeMIS() {
   };
 
   const handleDelete = (id) => {
-    if (window.confirm('Are you sure you want to delete this employee?')) {
+    if (confirm('Are you sure you want to delete this employee?')) {
       setEmployees(prev => prev.filter(emp => emp.id !== id));
     }
   };
@@ -117,7 +116,7 @@ export default function EmployeeMIS() {
     total: employees.length,
     active: employees.filter(e => e.status === 'Active').length,
     departments: new Set(employees.map(e => e.department)).size,
-    avgSalary: employees.length > 0 ? Math.round(employees.reduce((sum, e) => sum + (e.salary || 0), 0) / employees.length) : 0
+    avgSalary: employees.length > 0 ? Math.round(employees.reduce((sum, e) => sum + e.salary, 0) / employees.length) : 0
   };
 
   return (
@@ -245,7 +244,7 @@ export default function EmployeeMIS() {
                     <td className="px-6 py-4 text-sm text-gray-900">{emp.department}</td>
                     <td className="px-6 py-4 text-sm text-gray-900">{emp.position}</td>
                     <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                      ${Number(emp.salary).toLocaleString()}
+                      ${emp.salary.toLocaleString()}
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-600">{emp.joinDate}</td>
                     <td className="px-6 py-4">
@@ -268,4 +267,186 @@ export default function EmployeeMIS() {
                         </button>
                         <button
                           onClick={() => handleDelete(emp.id)}
-                          className="
+                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          title="Delete"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          
+          {filteredEmployees.length === 0 && (
+            <div className="text-center py-12">
+              <Users className="mx-auto text-gray-400 mb-4" size={48} />
+              <p className="text-gray-600 text-lg">No employees found</p>
+              <p className="text-gray-500 text-sm mt-2">Try adjusting your search or filters</p>
+            </div>
+          )}
+        </div>
+
+        {/* Form Modal */}
+        {isFormOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-2xl font-bold text-gray-800">
+                    {editingId ? 'Edit Employee' : 'Add New Employee'}
+                  </h2>
+                  <button
+                    onClick={resetForm}
+                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  >
+                    <X size={24} />
+                  </button>
+                </div>
+
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Full Name *
+                      </label>
+                      <input
+                        type="text"
+                        name="name"
+                        value={formData.name}
+                        onChange={handleInputChange}
+                        required
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Email *
+                      </label>
+                      <input
+                        type="email"
+                        name="email"
+                        value={formData.email}
+                        onChange={handleInputChange}
+                        required
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Phone *
+                      </label>
+                      <input
+                        type="tel"
+                        name="phone"
+                        value={formData.phone}
+                        onChange={handleInputChange}
+                        required
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Department *
+                      </label>
+                      <input
+                        type="text"
+                        name="department"
+                        value={formData.department}
+                        onChange={handleInputChange}
+                        required
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Position *
+                      </label>
+                      <input
+                        type="text"
+                        name="position"
+                        value={formData.position}
+                        onChange={handleInputChange}
+                        required
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Salary *
+                      </label>
+                      <input
+                        type="number"
+                        name="salary"
+                        value={formData.salary}
+                        onChange={handleInputChange}
+                        required
+                        min="0"
+                        step="1000"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Join Date *
+                      </label>
+                      <input
+                        type="date"
+                        name="joinDate"
+                        value={formData.joinDate}
+                        onChange={handleInputChange}
+                        required
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Status *
+                      </label>
+                      <select
+                        name="status"
+                        value={formData.status}
+                        onChange={handleInputChange}
+                        required
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      >
+                        <option value="Active">Active</option>
+                        <option value="Inactive">Inactive</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3 pt-4">
+                    <button
+                      type="submit"
+                      className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-lg flex items-center justify-center gap-2 transition-colors"
+                    >
+                      <Save size={20} />
+                      {editingId ? 'Update Employee' : 'Add Employee'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={resetForm}
+                      className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 py-3 rounded-lg transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
